@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -23,6 +24,11 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import java.time.Instant;
+import java.time.Month;
+import java.time.Year;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -38,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private TypeWriterView greetings;
+    private TextView dateAndTimeView;
     private Handler greetingsHandler = new Handler();
 
     private LinearLayout foldersList;
@@ -54,11 +61,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        dateAndTimeView = findViewById(R.id.dnt);
+        Date date = Date.from(Instant.now());
+        dateAndTimeView.setText(String.format("%s %s %s %s:%s", date.getDate(), Month.of(date.getMonth()), Year.now(), date.getHours(), date.getMinutes()));
+
         greetings = findViewById(R.id.greetings);
         greetings.setCharacterDelay(40); // 80ms delay between characters
         greetings.animateText(CommonUtility.getGreetings());
 
         greetingsHandler.postDelayed(() -> greetings.animateText("explore your memories"), 5000);
+        greetingsHandler.postDelayed(() -> {
+            greetings.setVisibility(View.GONE);
+        }, 20000);
+
 
         photosView = findViewById(R.id.photosView);
 //        photosView.setLayoutManager(new GridLayoutManager(this, 2));

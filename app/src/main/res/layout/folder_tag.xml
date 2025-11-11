@@ -12,7 +12,7 @@
         android:text="folder"
         android:textColor="@color/black"
         android:textStyle="bold"
-        android:textSize="12sp"
+        android:textSize="14sp"
         />
 
 </LinearLayout>

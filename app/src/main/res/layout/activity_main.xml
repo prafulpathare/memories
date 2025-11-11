@@ -8,27 +8,39 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
         android:orientation="vertical">
 
         <com.cigatee.gallery.TypeWriterView
             android:id="@+id/greetings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
             android:background="#FFFFFF"
-            android:gravity="left"
-            android:padding="16dp"
+            android:gravity="center"
+            android:textAlignment="center"
             android:textColor="@android:color/black"
-            android:textSize="24sp"
+            android:textSize="30sp"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/dnt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="5dp"
+            android:textAlignment="center"
+            android:textColor="#444444"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            />
 
-        <EditText xmlns:android="http://schemas.android.com/apk/res/android"
+
+        <EditText
             android:id="@+id/photoSearch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:layout_marginHorizontal="15dp"
             android:layout_marginVertical="10dp"
+            android:layout_marginTop="0dp"
 
             android:background="@drawable/search_bg"
             android:drawableStart="@drawable/ic_search"
@@ -39,26 +51,25 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:textColorHint="#999999"
-            android:textStyle="bold"
             android:textCursorDrawable="@drawable/black_cursor"
-            />
-
-
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:scrollbars="none">
-
-            <LinearLayout
-                android:id="@+id/folders"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="8dp" />
-        </HorizontalScrollView>
+            android:textStyle="bold" />
 
     </LinearLayout>
+
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/folders"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp" />
+    </HorizontalScrollView>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/photosView"
