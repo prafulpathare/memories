@@ -72,9 +72,8 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                         holder.imageView.post(() -> {
                             ViewGroup.LayoutParams params = holder.imageView.getLayoutParams();
 
-                            int aspectRatio = params.height / params.width;
+                            params.height = random.nextBoolean() ? 600 : random.nextBoolean() ? 350 : params.width;
 
-                            params.height = random.nextBoolean() ? 500 : 350;
                             holder.imageView.setLayoutParams(params);
                         });
 
