@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -20,8 +21,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,7 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private ImageAdapter imageAdapter;
 
 
-    private TextView greetings;
+    private TypeWriterView greetings;
+    private Handler greetingsHandler = new Handler();
+
     private LinearLayout foldersList;
     private List<String> selectedFolders = new ArrayList<>();
     private EditText photoSearch;
@@ -50,10 +55,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         greetings = findViewById(R.id.greetings);
-        greetings.setText(CommonUtility.getGreetings());
+        greetings.setCharacterDelay(40); // 80ms delay between characters
+        greetings.animateText(CommonUtility.getGreetings());
+
+        greetingsHandler.postDelayed(() -> greetings.animateText("explore your memories"), 5000);
 
         photosView = findViewById(R.id.photosView);
-        photosView.setLayoutManager(new GridLayoutManager(this, 2));
+//        photosView.setLayoutManager(new GridLayoutManager(this, 2));
+        photosView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
 
         photoSearch = findViewById(R.id.photoSearch);
         photoSearch.addTextChangedListener(onPhotoSearch());

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Base.Theme.Gallery.Dark" parent="@style/Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:statusBarColor">#FF000000</item> <!-- White -->
+        <item name="android:windowLightStatusBar">false</item> <!-- Dark icons -->
+        <item name="android:navigationBarColor">#FF000000</item>
+    </style>
+
+    <style name="Theme.Gallery.Dark" parent="Base.Theme.Gallery.Dark" />
+</resources>

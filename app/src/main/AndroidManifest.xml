@@ -27,6 +27,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".Pager" android:theme="@style/Theme.Gallery.Dark" />
+
     </application>
 
 </manifest>

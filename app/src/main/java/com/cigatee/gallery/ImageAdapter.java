@@ -1,6 +1,8 @@
 package com.cigatee.gallery;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,19 +10,28 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.resource.bitmap.CenterCrop;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHolder> {
 
     private Context context;
     private List<String> imagePaths;
+
+    private static Random random = new Random();
 
     public ImageAdapter(Context context, List<String> imagePaths) {
         this.context = context;
@@ -44,13 +55,43 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
 
         int cornerRadius = 32;
         Glide.with(context)
+                .asBitmap()
                 .load(new File(imagePath))
-                .transform(new CenterCrop(), new RoundedCorners(cornerRadius))
+                .transform(new CenterCrop(), new RoundedCorners(32))
+                .listener(new RequestListener<Bitmap>() {
+                    @Override
+                    public boolean onLoadFailed(@Nullable GlideException e, Object model,
+                                                Target<Bitmap> target, boolean isFirstResource) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target,
+                                                   DataSource dataSource, boolean isFirstResource) {
+
+                        holder.imageView.post(() -> {
+                            ViewGroup.LayoutParams params = holder.imageView.getLayoutParams();
+
+                            int aspectRatio = params.height / params.width;
+
+                            params.height = random.nextBoolean() ? 500 : 350;
+                            holder.imageView.setLayoutParams(params);
+                        });
+
+                        return false; // still let Glide handle setting the image
+                    }
+                })
                 .into(holder.imageView);
 
         holder.itemView.setOnClickListener(v -> {
-            Toast.makeText(context, imagePath, Toast.LENGTH_SHORT).show();
+
+            Intent intent = new Intent(context, Pager.class);
+            intent.putStringArrayListExtra("images", new ArrayList<>(imagePaths));
+            intent.putExtra("position", position);
+            context.startActivity(intent);
+
         });
+
     }
 
     @Override
