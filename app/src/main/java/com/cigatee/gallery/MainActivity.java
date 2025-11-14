@@ -1,20 +1,22 @@
 package com.cigatee.gallery;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -22,13 +24,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import java.io.File;
 import java.time.Instant;
 import java.time.Month;
 import java.time.Year;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -39,8 +39,13 @@ import java.util.stream.Collectors;
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<String> imagePaths;
+    private List<String> selectedImages = new ArrayList<>();
     private RecyclerView photosView;
     private ImageAdapter imageAdapter;
+
+    private int action;
+
+    private String searchText;
 
 
     private TypeWriterView greetings;
@@ -61,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        requestAllFilesPermission();
+
         dateAndTimeView = findViewById(R.id.dnt);
         Date date = Date.from(Instant.now());
         dateAndTimeView.setText(String.format("%s %s %s %s:%s", date.getDate(), Month.of(date.getMonth()), Year.now(), date.getHours(), date.getMinutes()));
@@ -76,17 +83,29 @@ public class MainActivity extends AppCompatActivity {
 
 
         photosView = findViewById(R.id.photosView);
-//        photosView.setLayoutManager(new GridLayoutManager(this, 2));
-        photosView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+        photosView.setLayoutManager(new GridLayoutManager(this, 2));
+//        photosView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
 
         photoSearch = findViewById(R.id.photoSearch);
         photoSearch.addTextChangedListener(onPhotoSearch());
+        photoSearch.setOnEditorActionListener((v, actionId, event) -> {
+
+            if (action == R.drawable.ic_search)
+                searchPhoto();
+            else if (action == R.drawable.ic_edit)
+                renameSelectedFiles();
+
+
+            return true;
+        });
+
+        action = R.drawable.ic_search;
 
         foldersList = findViewById(R.id.folders);
         foldersAdapter = new HorizontalStringAdapter(this, new ArrayList<>(), selectedFolders, folderName -> {
             if (selectedFolders.contains(folderName)) selectedFolders.remove(folderName);
             else selectedFolders.add(folderName);
-            searchPhoto("");
+            searchPhoto();
         });
 
         permissionLauncher = registerForActivityResult(
@@ -119,8 +138,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadImages() {
 
-        imagePaths = new ArrayList<>();
-        folders = new HashSet<>();
+        if(imagePaths == null) imagePaths = new ArrayList<>();
+        if(folders == null) folders = new HashSet<>();
 
         Uri collection;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -149,22 +168,52 @@ public class MainActivity extends AppCompatActivity {
             cursor.close();
         }
 
-        imageAdapter = new ImageAdapter(this, imagePaths);
+        imageAdapter = new ImageAdapter(
+                this,
+                imagePaths,
+                selectedImages,
+                path -> {
+                    if (!selectedImages.contains(path))
+                        selectedImages.add(path);
+                    else
+                        selectedImages.remove(path);
+
+
+                    if (selectedImages.isEmpty()) {
+                        action = R.drawable.ic_search;
+                    } else {
+                        action = R.drawable.ic_edit;
+                    }
+
+                    reloadSearchBar();
+                }
+        );
+
         photosView.setAdapter(imageAdapter);
 
         foldersAdapter.setFolders(new ArrayList<>(folders));
         foldersAdapter.populateLinearLayout(foldersList);
     }
 
-    void searchPhoto(String q) {
+    void reloadSearchBar() {
 
-        if (q == null) return;
+        searchText = "";
+        photoSearch.setText(searchText);
+        photoSearch.setCompoundDrawablesWithIntrinsicBounds(action, 0, 0, 0);
+
+
+    }
+
+    void searchPhoto() {
+
+        if (searchText == null) return;
 
         imageAdapter.setImagePaths(
                 imagePaths.stream().filter(img -> {
-                    boolean showImage = selectedFolders.isEmpty() && img.contains(q);
+                    boolean showImage = selectedFolders.isEmpty() && img.contains(searchText);
 
-                    if(!selectedFolders.isEmpty() && selectedFolders.stream().anyMatch(folder -> img.contains(folder) && img.contains(q))) showImage = true;
+                    if (!selectedFolders.isEmpty() && selectedFolders.stream().anyMatch(folder -> img.contains(folder) && img.contains(searchText)))
+                        showImage = true;
 
                     return showImage;
                 }).collect(Collectors.toList())
@@ -183,7 +232,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                searchPhoto(s.toString());
+                searchText = s.toString();
+
+                if (selectedImages.isEmpty()) searchPhoto();
             }
 
             @Override
@@ -205,4 +256,49 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    void renameSelectedFiles() {
+
+        int id = 1;
+
+        for (String image : selectedImages) {
+            try {
+
+                File oldFile = new File(image);
+                if (!oldFile.exists()) continue;
+
+                String extension = image.substring(image.lastIndexOf("."));
+                File newFile = new File(oldFile.getParent(), String.format("%s_%s_%s", searchText, id++, extension));
+                oldFile.renameTo(newFile);
+            } catch (Exception e) {
+                dateAndTimeView.setText(e.getMessage());
+            }
+        }
+
+        selectedImages.clear();
+
+        action = R.drawable.ic_search;
+        photoSearch.setText("");
+
+        loadImages();
+        reloadSearchBar();
+    }
+
+    private void requestAllFilesPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(intent); // user must toggle "Allow management of all files"
+                } catch (Exception e) {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivity(intent);
+                }
+            } else {
+                // already granted
+            }
+        }
+    }
+
 }

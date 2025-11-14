@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,7 +21,6 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -33,9 +31,21 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
 
     private static Random random = new Random();
 
-    public ImageAdapter(Context context, List<String> imagePaths) {
+    private OnImageLongPressListener longPressListener;
+    private List<String> selectedList;
+
+    // New interface
+    public interface OnImageLongPressListener {
+        void onImageLongPressed(String path);
+    }
+
+    // UPDATED constructor
+    public ImageAdapter(Context context, List<String> imagePaths, List<String> selectedList,
+                        OnImageLongPressListener longPressListener) {
         this.context = context;
         this.imagePaths = imagePaths;
+        this.selectedList = selectedList;
+        this.longPressListener = longPressListener;
     }
 
     public void setImagePaths(List<String> imagePaths) {
@@ -53,44 +63,54 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         String imagePath = imagePaths.get(position);
 
-        int cornerRadius = 32;
         Glide.with(context)
                 .asBitmap()
                 .load(new File(imagePath))
                 .transform(new CenterCrop(), new RoundedCorners(32))
-                .listener(new RequestListener<Bitmap>() {
-                    @Override
-                    public boolean onLoadFailed(@Nullable GlideException e, Object model,
-                                                Target<Bitmap> target, boolean isFirstResource) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target,
-                                                   DataSource dataSource, boolean isFirstResource) {
-
-                        holder.imageView.post(() -> {
-                            ViewGroup.LayoutParams params = holder.imageView.getLayoutParams();
-
-                            params.height = random.nextBoolean() ? 600 : random.nextBoolean() ? 350 : params.width;
-
-                            holder.imageView.setLayoutParams(params);
-                        });
-
-                        return false; // still let Glide handle setting the image
-                    }
-                })
+//                .listener(new RequestListener<Bitmap>() {
+//                    @Override
+//                    public boolean onLoadFailed(@Nullable GlideException e, Object model,
+//                                                Target<Bitmap> target, boolean isFirstResource) {
+//                        return false;
+//                    }
+//
+//                    @Override
+//                    public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target,
+//                                                   DataSource dataSource, boolean isFirstResource) {
+//
+//                        holder.imageView.post(() -> {
+//                            ViewGroup.LayoutParams params = holder.imageView.getLayoutParams();
+//                            params.height = random.nextBoolean() ? 600 : random.nextBoolean() ? 350 : params.width;
+//                            holder.imageView.setLayoutParams(params);
+//                        });
+//
+//                        return false;
+//                    }
+//                })
                 .into(holder.imageView);
 
+
+        // ✔ Highlight if selected
+        holder.itemView.setAlpha(selectedList.contains(imagePath) ? 0.2f : 1f);
+
+
+        // ✔ Long press
+        holder.itemView.setOnLongClickListener(v -> {
+            longPressListener.onImageLongPressed(imagePath);
+            notifyItemChanged(position);
+            return true;
+        });
+
+
+        // ✔ Normal click → open pager
         holder.itemView.setOnClickListener(v -> {
 
             Intent intent = new Intent(context, Pager.class);
-            intent.putStringArrayListExtra("images", new ArrayList<>(imagePaths));
+            intent.putStringArrayListExtra("images", new java.util.ArrayList<>(imagePaths));
             intent.putExtra("position", position);
             context.startActivity(intent);
 
         });
-
     }
 
     @Override
